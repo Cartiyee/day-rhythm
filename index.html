@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Day Rhythm</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Day Rhythm">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f6f6f5">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Bright monochrome: white surfaces, light grey page, black type. Block types are told apart by shade alone. */
+:root{
+  --bg:#f6f6f5; --surface:#ffffff; --fg:#111111; --muted:#6e6e6e; --line:#e3e3e1;
+  --work:#111111; --learn:#3c3c3c; --move:#686868; --free:#969696; --care:#c2c2c0; --sleep:#dadad8;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Figtree",ui-sans-serif,system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:680px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 20px) max(16px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 40px) max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:22px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:700;font-size:1.6rem;margin:0;letter-spacing:-.01em}
+.clock{font-family:var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+
+.now{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden}
+.now::before{content:"";position:absolute;inset:0 0 auto 0;height:6px;background:var(--cur,var(--work))}
+.eyebrow{font-size:.75rem;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:8px}
+.cur-name{font-family:var(--display);font-weight:700;font-size:clamp(2rem,8vw,2.9rem);line-height:1.05;margin:0;text-wrap:balance}
+.cur-note{margin:0;max-width:52ch}
+.count{font-family:var(--mono);font-size:clamp(2.2rem,10vw,3.4rem);font-variant-numeric:tabular-nums;line-height:1}
+.count small{font-family:var(--body);font-size:.9rem;color:var(--muted);margin-left:8px}
+.bar{height:8px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--fg);width:0;transition:width .6s}
+.next{color:var(--muted);font-size:.95rem}
+.next b{color:var(--fg);font-weight:600}
+.done{display:none;background:var(--bg);border-radius:12px;padding:14px 16px;font-weight:500}
+.done.on{display:block}
+
+.strip-box{display:flex;flex-direction:column;gap:6px}
+.strip{position:relative;display:flex;height:34px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--surface)}
+.strip span{height:100%;border-right:1px solid var(--surface)}
+.strip .marker{position:absolute;top:0;bottom:0;width:3px;background:var(--fg);box-shadow:0 0 0 2px var(--surface)}
+.ticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+
+.settings{display:flex;gap:16px;flex-wrap:wrap;align-items:end}
+.field{display:flex;flex-direction:column;gap:4px}
+label,.lbl{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:16px}
+input[type=time]{font-family:var(--mono);min-height:42px}
+.bed{font-family:var(--mono);font-size:1rem;padding:9px 0}
+button{font-family:var(--body);font-weight:600;font-size:.95rem;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;min-height:42px}
+button:disabled{opacity:.35}
+button[aria-pressed="true"],button.primary{background:var(--fg);color:var(--surface);border-color:var(--fg)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.hint{font-size:.85rem;color:var(--muted);margin:0}
+
+h2{font-family:var(--display);font-weight:500;font-size:1.15rem;margin:0}
+.sec-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+#list li{display:grid;grid-template-columns:7.2rem 12px 1fr;gap:12px;align-items:start;padding:10px 8px;border-radius:10px}
+#list .t{font-family:var(--mono);font-size:.85rem;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+.dot{width:12px;height:12px;border-radius:50%;margin-top:5px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+#list .n{font-weight:600}
+#list .d{color:var(--muted);font-size:.9rem;min-width:0}
+#list li.cur{background:var(--surface);border:1px solid var(--line)}
+#list li.past{opacity:.45}
+
+/* Editor: one card per block */
+#editor{display:none;flex-direction:column;gap:10px}
+.editing #editor{display:flex}
+.editing #list{display:none}
+.blk{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden;padding-left:18px}
+.blk::before{content:"";position:absolute;inset:0 auto 0 0;width:6px;background:var(--c)}
+.blk .row{display:flex;gap:8px;align-items:center}
+.blk .name{flex:1;min-width:0;font-weight:600}
+.blk .when{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.dur{display:flex;align-items:center;gap:6px}
+.dur button{width:42px;padding:0;font-size:1.2rem}
+.dur output{font-family:var(--mono);min-width:5.2rem;text-align:center}
+.blk select{flex:1;min-width:0}
+.blk textarea{width:100%;resize:vertical;min-height:2.6em}
+.blk .tools{display:flex;gap:6px;justify-content:flex-end}
+.blk .tools button{padding:0 12px;font-weight:500;font-size:.85rem}
+.sum{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:.95rem}
+.sum.bad{border:2px solid var(--fg)}
+.sum .w{font-weight:700}
+.edit-actions{display:flex;gap:8px;flex-wrap:wrap}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.8rem;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend .dot{margin:0;width:10px;height:10px}
+footer{color:var(--muted);font-size:.85rem}
+@media (prefers-reduced-motion: reduce){.bar i{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header>
+    <h1>Day Rhythm</h1>
+    <span class="clock" id="clock">--:--</span>
+  </header>
+
+  <section class="now" id="now" aria-live="polite">
+    <span class="eyebrow">Right now</span>
+    <h2 class="cur-name" id="curName">…</h2>
+    <p class="cur-note" id="curNote"></p>
+    <div class="count" id="count">--:--<small>left</small></div>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="next" id="next"></div>
+    <div class="done" id="done">Work is over for today. Close the laptop. Whatever is left goes on tomorrow's list.</div>
+  </section>
+
+  <section class="strip-box" aria-label="Your day at a glance">
+    <div class="strip" id="strip"></div>
+    <div class="ticks" id="ticks"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <section class="settings">
+    <div class="field">
+      <label for="wake">Wake time</label>
+      <input type="time" id="wake" value="07:00">
+    </div>
+    <div class="field">
+      <span class="lbl">Bedtime</span>
+      <span class="bed" id="bedOut">23:00</span>
+    </div>
+    <button id="chime" aria-pressed="false">Chime on change: off</button>
+    <p class="hint">Everything shifts with your wake time. Sleep fills whatever is left of the 24 hours. The chime only plays while the app is open on screen.</p>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:8px">
+    <div class="sec-head">
+      <h2 id="secTitle">Today's windows</h2>
+      <button id="editBtn">Customise</button>
+    </div>
+    <ol id="list"></ol>
+    <div id="editor">
+      <div class="sum" id="sum"></div>
+      <div id="blocks" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div class="edit-actions">
+        <button id="addBtn">+ Add block</button>
+        <button id="resetBtn">Reset to default</button>
+        <button id="doneBtn" class="primary" style="margin-left:auto">Done</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>A day that's 70% on plan is a good day.</footer>
+</div>
+
+<script>
+// Awake blocks in order from wake time; "l" is length in minutes. Sleep is the rest of the 24 hours.
+const DEFAULT_PLAN=[
+ {l:60, n:"Morning",      c:"care",  d:"Daylight, water, breakfast. No phone or email for the first 30 minutes."},
+ {l:45, n:"Learn & grow", c:"learn", d:"Fresh brain. A course, a book, a skill. Do it before work can take it."},
+ {l:15, n:"Buffer",       c:"care",  d:"Get set up. Pick today's top 3 tasks."},
+ {l:210,n:"Deep work",    c:"work",  d:"Hardest client work. Two 90-minute sprints with a 15-minute break."},
+ {l:60, n:"Lunch + walk", c:"move",  d:"Eat away from the screen. Get outside."},
+ {l:210,n:"Light work",   c:"work",  d:"Calls, admin, emails, revisions."},
+ {l:15, n:"Shutdown",     c:"care",  d:"Write tomorrow's top 3. Close everything. Done."},
+ {l:15, n:"Transition",   c:"care",  d:"Change clothes, leave the desk."},
+ {l:60, n:"Exercise",     c:"move",  d:"Gym, run, sport. On rest days, a long walk."},
+ {l:210,n:"Free time",    c:"free",  d:"Dinner, people, hobbies. Nothing productive."},
+ {l:60, n:"Wind-down",    c:"sleep", d:"Dim lights, screens down, read, shower."}
+];
+const CATS={work:"Work",learn:"Learning",move:"Movement",free:"Free time",care:"Routine",sleep:"Rest"};
+const STEP=15, MIN_SLEEP=240;
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const fmt=m=>{m=((Math.round(m)%1440)+1440)%1440;return pad(Math.floor(m/60))+":"+pad(m%60)};
+const toMin=v=>{const[h,m]=v.split(":").map(Number);return h*60+m};
+const dur=m=>{const h=Math.floor(m/60),r=m%60;return (h?h+"h":"")+(h&&r?" ":"")+(r||!h?r+"m":"")};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const clone=x=>JSON.parse(JSON.stringify(x));
+const store={
+  get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+};
+
+let blocks=clone(DEFAULT_PLAN), PLAN=[], workEnd=0, wake=420, chime=false, lastIdx=-1, actx=null;
+try{const s=JSON.parse(store.get("dr-plan"));if(Array.isArray(s)&&s.length)blocks=s}catch(e){}
+const savedWake=store.get("dr-wake"); if(savedWake)$("wake").value=savedWake;
+wake=toMin($("wake").value);
+
+const awake=()=>blocks.reduce((a,b)=>a+b.l,0);
+
+// Turn the editable blocks into the timed day, with sleep closing the loop
+function compile(){
+  let s=0;
+  PLAN=blocks.map(b=>{const p={...b,s};s+=b.l;return p});
+  PLAN.push({s,l:1440-s,n:"Sleep",c:"sleep",d:`Lights out. ${dur(1440-s)} in bed.`});
+  let lastWork=-1; PLAN.forEach((p,i)=>{if(p.c==="work")lastWork=i});
+  workEnd=lastWork<0?-1:PLAN[lastWork].s+PLAN[lastWork].l;
+}
+
+function build(){
+  compile();
+  $("bedOut").textContent=fmt(wake+awake());
+  $("strip").innerHTML=PLAN.map(p=>`<span title="${esc(p.n)}" style="width:${p.l/14.4}%;background:var(--${p.c})"></span>`).join("")+'<div class="marker" id="marker"></div>';
+  $("ticks").innerHTML=[0,240,480,720,960,1200,1440].map(o=>`<span>${fmt(wake+o)}</span>`).join("");
+  const used=new Set(PLAN.map(p=>p.c));
+  $("legend").innerHTML=Object.entries(CATS).filter(([k])=>used.has(k)).map(([k,v])=>`<span><i class="dot" style="background:var(--${k})"></i>${v}</span>`).join("");
+  $("list").innerHTML=PLAN.map((p,i)=>`<li data-i="${i}"><span class="t">${fmt(wake+p.s)}–${fmt(wake+p.s+p.l)}</span><span class="dot" style="background:var(--${p.c})"></span><span><div class="n">${esc(p.n)}</div><div class="d">${esc(p.d)}</div></span></li>`).join("");
+  lastIdx=-1; tick();
+}
+
+function beep(){
+  if(!chime||!actx)return;
+  const o=actx.createOscillator(),g=actx.createGain();
+  o.type="sine";o.frequency.value=660;
+  g.gain.setValueAtTime(.0001,actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.25,actx.currentTime+.05);
+  g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+1.4);
+  o.connect(g).connect(actx.destination);o.start();o.stop(actx.currentTime+1.5);
+}
+
+function tick(){
+  const now=new Date();
+  const nowMin=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
+  $("clock").textContent=pad(now.getHours())+":"+pad(now.getMinutes());
+  const off=((nowMin-wake)%1440+1440)%1440;
+  const i=Math.max(0,PLAN.findIndex(p=>off>=p.s&&off<p.s+p.l));
+  const p=PLAN[i], nx=PLAN[(i+1)%PLAN.length];
+  const left=p.s+p.l-off;
+  const lh=Math.floor(left/60), lm=Math.floor(left%60), ls=Math.floor((left*60)%60);
+  $("now").style.setProperty("--cur",`var(--${p.c})`);
+  $("curName").textContent=p.n;
+  $("curNote").textContent=p.d;
+  $("count").innerHTML=(lh?lh+":"+pad(lm):lm)+":"+pad(ls)+"<small>left</small>";
+  $("prog").style.width=((off-p.s)/p.l*100)+"%";
+  $("next").innerHTML=`Next: <b>${esc(nx.n)}</b> at ${fmt(wake+nx.s)}`;
+  $("done").classList.toggle("on",workEnd>=0&&off>=workEnd&&p.c!=="sleep");
+  const mk=$("marker"); if(mk)mk.style.left=`calc(${off/14.4}% - 1.5px)`;
+  if(i!==lastIdx){
+    if(lastIdx!==-1)beep();
+    lastIdx=i;
+    document.querySelectorAll("#list li").forEach((li,k)=>{li.classList.toggle("cur",k===i);li.classList.toggle("past",k<i)});
+    document.title=p.n+" · Day Rhythm";
+  }
+}
+
+// ---- Editor ----
+function save(){store.set("dr-plan",JSON.stringify(blocks));build();renderSum();renderTimes()}
+
+function renderSum(){
+  const sleep=1440-awake(), bad=sleep<420;
+  $("sum").className="sum"+(bad?" bad":"");
+  $("sum").innerHTML=`Awake <b>${dur(awake())}</b> · Sleep <b>${dur(sleep)}</b> · Bedtime <b>${fmt(wake+awake())}</b>`+
+    (bad?`<br><span class="w">That's less than 7 hours of sleep.</span>`:"");
+}
+function renderTimes(){
+  let s=0;
+  document.querySelectorAll(".blk").forEach((el,i)=>{
+    el.querySelector(".when").textContent=`${fmt(wake+s)}–${fmt(wake+s+blocks[i].l)}`;
+    el.querySelector("output").textContent=dur(blocks[i].l);
+    s+=blocks[i].l;
+  });
+}
+function renderEditor(){
+  $("blocks").innerHTML=blocks.map((b,i)=>`
+   <div class="blk" data-i="${i}" style="--c:var(--${b.c})">
+     <div class="row">
+       <input class="name" data-k="n" value="${esc(b.n)}" aria-label="Block name">
+       <span class="when"></span>
+     </div>
+     <div class="row">
+       <div class="dur">
+         <button data-a="minus" aria-label="${STEP} minutes shorter">−</button>
+         <output></output>
+         <button data-a="plus" aria-label="${STEP} minutes longer">+</button>
+       </div>
+       <select data-k="c" aria-label="Type">${Object.entries(CATS).map(([k,v])=>`<option value="${k}"${k===b.c?" selected":""}>${v}</option>`).join("")}</select>
+     </div>
+     <textarea data-k="d" rows="2" aria-label="Note" placeholder="What this time is for">${esc(b.d)}</textarea>
+     <div class="tools">
+       <button data-a="up" ${i===0?"disabled":""} aria-label="Move up">↑</button>
+       <button data-a="down" ${i===blocks.length-1?"disabled":""} aria-label="Move down">↓</button>
+       <button data-a="del">Delete</button>
+     </div>
+   </div>`).join("");
+  renderTimes(); renderSum();
+}
+
+$("blocks").addEventListener("input",e=>{
+  const k=e.target.dataset.k; if(!k)return;
+  const el=e.target.closest(".blk"), i=+el.dataset.i;
+  blocks[i][k]=e.target.value;
+  if(k==="c")el.style.setProperty("--c",`var(--${e.target.value})`);
+  save();
+});
+$("blocks").addEventListener("click",e=>{
+  const a=e.target.dataset.a; if(!a)return;
+  const i=+e.target.closest(".blk").dataset.i, b=blocks[i];
+  if(a==="plus"){ if(1440-awake()-STEP<MIN_SLEEP)return; b.l+=STEP; save(); return }
+  if(a==="minus"){ if(b.l<=STEP)return; b.l-=STEP; save(); return }
+  if(a==="up"&&i>0)[blocks[i-1],blocks[i]]=[blocks[i],blocks[i-1]];
+  if(a==="down"&&i<blocks.length-1)[blocks[i+1],blocks[i]]=[blocks[i],blocks[i+1]];
+  if(a==="del"){ if(blocks.length<=1)return; if(!confirm(`Delete "${b.n}"?`))return; blocks.splice(i,1) }
+  save(); renderEditor();
+});
+$("addBtn").addEventListener("click",()=>{
+  if(1440-awake()-30<MIN_SLEEP){alert("No room left: shorten another block first.");return}
+  blocks.push({l:30,n:"New block",c:"free",d:""});
+  save(); renderEditor();
+  const last=$("blocks").lastElementChild; last.scrollIntoView({behavior:"smooth",block:"center"}); last.querySelector(".name").select();
+});
+$("resetBtn").addEventListener("click",()=>{
+  if(!confirm("Reset all blocks to the original plan?"))return;
+  blocks=clone(DEFAULT_PLAN); save(); renderEditor();
+});
+function setEditing(on){
+  $("app").classList.toggle("editing",on);
+  $("secTitle").textContent=on?"Customise your day":"Today's windows";
+  $("editBtn").hidden=on;
+  if(on)renderEditor();
+}
+$("editBtn").addEventListener("click",()=>setEditing(true));
+$("doneBtn").addEventListener("click",()=>{setEditing(false);$("secTitle").scrollIntoView({behavior:"smooth"})});
+
+$("wake").addEventListener("change",e=>{
+  if(!e.target.value)return;
+  wake=toMin(e.target.value);
+  store.set("dr-wake",e.target.value);
+  build(); if($("app").classList.contains("editing")){renderTimes();renderSum()}
+});
+$("chime").addEventListener("click",e=>{
+  chime=!chime;
+  if(chime&&!actx){try{actx=new (window.AudioContext||window.webkitAudioContext)()}catch(err){}}
+  if(actx&&actx.state==="suspended")actx.resume();
+  e.target.setAttribute("aria-pressed",chime);
+  e.target.textContent="Chime on change: "+(chime?"on":"off");
+  if(chime)beep();
+});
+// iOS freezes timers in the background; catch up straight away when the app comes back
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)tick()});
+
+build();
+setInterval(tick,1000);
+if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+</script>
+</body>
+</html>
